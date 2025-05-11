@@ -38,12 +38,12 @@ python train.py --board_size 8 --n_in_row 5
 ```
 
 ## Project Structure
-- `mcts/`: Monte Carlo Tree Search implementation
-- `minmax/`: Minimax algorithm implementation
-- `gui.py`: Graphical user interface
-- `compare.py`: AI comparison script
-- `train.py`: Model training script
+- `mcts/`: Monte Carlo Tree Search implementation (based on external work)
+- `minmax/`: Minimax algorithm implementation (original contribution)
+- `gui.py`: Graphical user interface (original contribution)
+- `compare.py`: AI comparison script (original contribution)
+- `train.py`: Model training script (original contribution)
 - `demo/`: Contains demonstration files including GUI demo
 
-## Credits
-The Monte Carlo Tree Search (MCTS) implementation is based on the project [AlphaZero_Gomoku](https://github.com/junxiaosong/AlphaZero_Gomoku.git) by junxiaosong.
+## Contributions
+Only the content in the `mcts/` directory is based on the project [AlphaZero_Gomoku](https://github.com/junxiaosong/AlphaZero_Gomoku.git) by junxiaosong. All other components, including the GUI interface, Minimax implementation, comparison tools, and DQN integration, are original contributions.
