@@ -3,6 +3,9 @@
 ## Introduction
 This project implements Gomoku (Five in a Row) AI using deep reinforcement learning, featuring DQN and AlphaZero methodologies.
 
+## Demo
+![Gomoku GUI Demo](demo.gif)
+
 ## Features
 - DQN reinforcement learning algorithm
 - Minimax search with alpha-beta pruning
@@ -40,6 +43,7 @@ python train.py --board_size 8 --n_in_row 5
 - `gui.py`: Graphical user interface
 - `compare.py`: AI comparison script
 - `train.py`: Model training script
+- `demo/`: Contains demonstration files including GUI demo
 
 ## Credits
 The Monte Carlo Tree Search (MCTS) implementation is based on the project [AlphaZero_Gomoku](https://github.com/junxiaosong/AlphaZero_Gomoku.git) by junxiaosong.
