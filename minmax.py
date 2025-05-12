@@ -1,17 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-Optimized Minimax algorithm for Gomoku
-Enhanced defensive strategy with improved two-stone patterns
-"""
-
 import numpy as np
 import time
 import copy
 
 
 class MinimaxPlayer:
-    """Minimax player with enhanced defensive logic"""
-
     def __init__(self, max_depth=3):
         self.max_depth = max_depth
         self.player = None
@@ -19,19 +12,15 @@ class MinimaxPlayer:
         self.time_spent = 0
 
     def set_player_ind(self, p):
-        """Set player index"""
         self.player = p
 
     def reset_player(self):
-        """Reset player state"""
         pass
 
     def get_action(self, board):
-        """Get next move"""
         self.nodes_evaluated = 0
         start_time = time.time()
 
-        # Get legal moves
         moves = board.availables
         if not moves:
             return -1
@@ -40,13 +29,13 @@ class MinimaxPlayer:
         if len(moves) == board.width * board.height:
             return board.height // 2 * board.width + board.width // 2
 
-        # Check for critical moves (immediate threats)
+        # Check for critical moves
         critical = self._check_critical_move(board)
         if critical is not None:
             self.time_spent = time.time() - start_time
             return critical
 
-        # Find best move using minimax
+        # Find best move
         best_score = -float('inf')
         best_move = moves[0]
 
@@ -54,15 +43,11 @@ class MinimaxPlayer:
             if move not in moves:
                 continue
 
-            # Simulate move
             board_copy = copy.deepcopy(board)
             board_copy.do_move(move)
-
-            # Evaluate with minimax
             score = self._minimax(board_copy, self.max_depth - 1,
-                                  -float('inf'), float('inf'), False)
+                                -float('inf'), float('inf'), False)
 
-            # Update best move
             if score > best_score:
                 best_score = score
                 best_move = move
@@ -71,12 +56,10 @@ class MinimaxPlayer:
         return best_move
 
     def _check_critical_move(self, board):
-        """Check for urgent defensive or winning positions"""
         opponent = 3 - self.player
 
         # Check for winning moves
         for move in board.availables:
-            # Test if we can win
             board_copy = copy.deepcopy(board)
             board_copy.do_move(move)
             end, winner = board_copy.game_end()
@@ -93,21 +76,19 @@ class MinimaxPlayer:
             if end and winner == opponent:
                 return move
 
-        # Check for open four threats
+        # Check for threats
         threat = self._find_threat(board, opponent, "open_four")
         if threat: return threat
 
         threat = self._find_threat(board, self.player, "open_four")
         if threat: return threat
 
-        # Check for four threats
         threat = self._find_threat(board, opponent, "four")
         if threat: return threat
 
         threat = self._find_threat(board, self.player, "four")
         if threat: return threat
 
-        # Check for open three threats
         threat = self._find_threat(board, opponent, "open_three")
         if threat: return threat
 
@@ -117,7 +98,6 @@ class MinimaxPlayer:
         return None
 
     def _find_threat(self, board, player, threat_type):
-        """Find specific threats on board"""
         for move in board.availables:
             board_copy = copy.deepcopy(board)
             board_copy.states[move] = player
@@ -128,7 +108,6 @@ class MinimaxPlayer:
         return None
 
     def _get_ordered_moves(self, board):
-        """Get moves ordered by potential strength"""
         scored_moves = []
 
         for move in board.availables:
@@ -146,7 +125,7 @@ class MinimaxPlayer:
                         if neighbor in board.states:
                             score += 1
                             if board.states[neighbor] != self.player:
-                                score += 1  # Prioritize defense
+                                score += 1
 
             # Prefer center
             center_h, center_w = board.height // 2, board.width // 2
@@ -155,29 +134,24 @@ class MinimaxPlayer:
 
             scored_moves.append((move, score))
 
-        # Sort by score (descending)
         scored_moves.sort(key=lambda x: x[1], reverse=True)
         return [move for move, _ in scored_moves]
 
     def _minimax(self, board, depth, alpha, beta, is_maximizing):
-        """Minimax algorithm with alpha-beta pruning"""
         self.nodes_evaluated += 1
 
-        # Check terminal states
         end, winner = board.game_end()
         if end:
-            if winner == self.player:  # Win
+            if winner == self.player:
                 return 10000 + depth
-            elif winner == -1:  # Draw
+            elif winner == -1:
                 return 0
-            else:  # Loss
+            else:
                 return -10000 - depth
 
-        # Reached search depth limit
         if depth == 0:
             return self._evaluate(board)
 
-        # Maximizing player (self)
         if is_maximizing:
             max_eval = -float('inf')
             moves = self._get_ordered_moves(board)
@@ -192,12 +166,9 @@ class MinimaxPlayer:
                 max_eval = max(max_eval, eval)
                 alpha = max(alpha, eval)
 
-                # Alpha-Beta pruning
                 if beta <= alpha:
                     break
             return max_eval
-
-        # Minimizing player (opponent)
         else:
             min_eval = float('inf')
             moves = self._get_ordered_moves(board)
@@ -212,21 +183,18 @@ class MinimaxPlayer:
                 min_eval = min(min_eval, eval)
                 beta = min(beta, eval)
 
-                # Alpha-Beta pruning
                 if beta <= alpha:
                     break
             return min_eval
 
     def _evaluate(self, board):
-        """Evaluate board state"""
         opponent = 3 - self.player
         score = 0
 
-        # Get patterns for both players
         patterns = self._get_patterns(board, self.player)
         opp_patterns = self._get_patterns(board, opponent)
 
-        # Score patterns (offense)
+        # Score patterns
         score += patterns['five'] * 100000
         score += patterns['open_four'] * 10000
         score += patterns['four'] * 1000
@@ -235,7 +203,7 @@ class MinimaxPlayer:
         score += patterns['open_two'] * 8
         score += patterns['two'] * 3
 
-        # Score opponent patterns (defense - higher weights)
+        # Score opponent patterns
         score -= opp_patterns['five'] * 150000
         score -= opp_patterns['open_four'] * 15000
         score -= opp_patterns['four'] * 1500
@@ -244,7 +212,7 @@ class MinimaxPlayer:
         score -= opp_patterns['open_two'] * 10
         score -= opp_patterns['two'] * 5
 
-        # Add position-based scoring
+        # Position-based scoring
         for move, player in board.states.items():
             h, w = board.move_to_location(move)
             center_h, center_w = board.height // 2, board.width // 2
@@ -259,18 +227,16 @@ class MinimaxPlayer:
         return score
 
     def _get_patterns(self, board, player):
-        """Get pattern counts from board"""
         patterns = {
-            'five': 0,  # Five in a row
-            'open_four': 0,  # Open four
-            'four': 0,  # Four
-            'open_three': 0,  # Open three
-            'three': 0,  # Three
-            'open_two': 0,  # Open two
-            'two': 0  # Two in a row
+            'five': 0,
+            'open_four': 0,
+            'four': 0,
+            'open_three': 0,
+            'three': 0,
+            'open_two': 0,
+            'two': 0
         }
 
-        # Create board state matrix
         board_state = np.zeros((board.height, board.width), dtype=int)
         for move, p in board.states.items():
             h, w = board.move_to_location(move)
@@ -278,7 +244,6 @@ class MinimaxPlayer:
 
         opponent = 3 - player
 
-        # Convert board to string representation for pattern matching
         # Check horizontal lines
         for i in range(board.height):
             line = ""
@@ -303,8 +268,7 @@ class MinimaxPlayer:
                     line += "0"
             self._check_patterns(line, patterns)
 
-        # Check diagonal lines (both directions)
-        # Main diagonal (top-left to bottom-right)
+        # Check diagonals
         for s in range(-(board.height - 1), board.width):
             line = ""
             for i in range(max(0, -s), min(board.height, board.width - s)):
@@ -318,7 +282,6 @@ class MinimaxPlayer:
             if len(line) >= 5:
                 self._check_patterns(line, patterns)
 
-        # Anti-diagonal (top-right to bottom-left)
         for s in range(board.width + board.height - 1):
             line = ""
             for i in range(max(0, s - board.width + 1), min(s + 1, board.height)):
@@ -335,7 +298,6 @@ class MinimaxPlayer:
         return patterns
 
     def _check_patterns(self, line, patterns):
-        """Check line for various patterns"""
         # Five in a row
         patterns['five'] += line.count('11111')
 

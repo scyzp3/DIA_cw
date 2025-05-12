@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Simple Gomoku AI Comparison: AlphaZero vs Minimax and AlphaZero vs Pure MCTS
-"""
-
 import time
 import torch
 import matplotlib.pyplot as plt
@@ -15,32 +11,24 @@ from minmax import MinimaxPlayer
 
 
 def load_alphazero(model_file, board_size=(8, 8)):
-    """Load AlphaZero model"""
     width, height = board_size
     try:
-        policy_value_net = PolicyValueNet(
+        return PolicyValueNet(
             width, height,
             model_file=model_file,
             use_gpu=torch.cuda.is_available()
         )
-        return policy_value_net
     except:
         return None
 
 
 def compare_ai(model_file='models/best_policy.model', n_games=10):
-    """Compare AlphaZero vs Minimax and AlphaZero vs Pure MCTS"""
     # Setup
-    board_size = (8, 8)
-    n_in_row = 5
-    width, height = board_size
-
-    # Create board
-    board = Board(width=width, height=height, n_in_row=n_in_row)
+    board = Board(width=8, height=8, n_in_row=5)
     game = Game(board)
 
     # Load AlphaZero
-    policy_net = load_alphazero(model_file, board_size)
+    policy_net = load_alphazero(model_file)
     if policy_net is None:
         print("Failed to load AlphaZero model")
         return False
@@ -61,7 +49,6 @@ def compare_ai(model_file='models/best_policy.model', n_games=10):
     for ai1, ai2, name1, name2 in ai_pairs:
         print(f"\nComparing {name1} vs {name2} ({n_games} games)...")
 
-        # Results tracking
         wins = {1: 0, 2: 0, 'tie': 0}
         times = {1: 0, 2: 0}
         moves = {1: 0, 2: 0}
@@ -72,12 +59,11 @@ def compare_ai(model_file='models/best_policy.model', n_games=10):
             if i % 2 == 0:
                 players = {1: ai1, 2: ai2}
                 names = {1: name1, 2: name2}
-                board.init_board(0)  # p1 first
             else:
                 players = {1: ai2, 2: ai1}
                 names = {1: name2, 2: name1}
-                board.init_board(0)  # p1 first
 
+            board.init_board(0)
             ai1.set_player_ind(1 if i % 2 == 0 else 2)
             ai2.set_player_ind(2 if i % 2 == 0 else 1)
 
@@ -89,10 +75,7 @@ def compare_ai(model_file='models/best_policy.model', n_games=10):
                 # Time the move
                 start = time.time()
                 move = player.get_action(board)
-                move_time = time.time() - start
-
-                # Record stats
-                times[current] += move_time
+                times[current] += time.time() - start
                 moves[current] += 1
 
                 # Make move
@@ -110,10 +93,8 @@ def compare_ai(model_file='models/best_policy.model', n_games=10):
                     break
 
         # Calculate stats
-        if i % 2 == 0:
-            win1, win2 = wins[1], wins[2]
-        else:
-            win1, win2 = wins[2], wins[1]
+        win1 = wins[1] if i % 2 == 0 else wins[2]
+        win2 = wins[2] if i % 2 == 0 else wins[1]
 
         print(f"\nResults - {name1} vs {name2}:")
         print(f"{name1} wins: {win1} ({win1 / n_games * 100:.1f}%)")
@@ -125,44 +106,36 @@ def compare_ai(model_file='models/best_policy.model', n_games=10):
     # Plot results
     plt.figure(figsize=(12, 6))
 
-    # Set up plot
     x = ['AlphaZero vs Minimax', 'AlphaZero vs PureMCTS']
-    alphazero_wins = [all_results['AlphaZero_vs_Minimax'][0],
-                      all_results['AlphaZero_vs_PureMCTS'][0]]
-    opponent_wins = [all_results['AlphaZero_vs_Minimax'][1],
-                     all_results['AlphaZero_vs_PureMCTS'][1]]
+    az_wins = [all_results['AlphaZero_vs_Minimax'][0],
+               all_results['AlphaZero_vs_PureMCTS'][0]]
+    opp_wins = [all_results['AlphaZero_vs_Minimax'][1],
+                all_results['AlphaZero_vs_PureMCTS'][1]]
     ties = [all_results['AlphaZero_vs_Minimax'][2],
             all_results['AlphaZero_vs_PureMCTS'][2]]
 
-    # Plot bars
-    x_pos = range(len(x))
+    # Create chart
     width = 0.25
+    x_pos = range(len(x))
 
-    plt.bar([p - width for p in x_pos], alphazero_wins, width,
-            color='blue', label='AlphaZero')
-    plt.bar(x_pos, opponent_wins, width,
-            color='red', label='Opponent')
-    plt.bar([p + width for p in x_pos], ties, width,
-            color='gray', label='Tie')
+    plt.bar([p - width for p in x_pos], az_wins, width, color='blue', label='AlphaZero')
+    plt.bar(x_pos, opp_wins, width, color='red', label='Opponent')
+    plt.bar([p + width for p in x_pos], ties, width, color='gray', label='Tie')
 
     # Add labels
-    for i, v in enumerate(alphazero_wins):
+    for i, v in enumerate(az_wins):
         plt.text(i - width, v + 0.1, str(v), ha='center')
-
-    for i, v in enumerate(opponent_wins):
+    for i, v in enumerate(opp_wins):
         plt.text(i, v + 0.1, str(v), ha='center')
-
     for i, v in enumerate(ties):
         plt.text(i + width, v + 0.1, str(v), ha='center')
 
-    # Add titles and labels
     plt.xlabel('Comparison')
     plt.ylabel('Number of wins')
     plt.title(f'AlphaZero Performance ({n_games} games per pair)')
     plt.xticks(x_pos, x)
     plt.legend()
 
-    # Save and show
     plt.savefig('alphazero_comparison.png', dpi=300, bbox_inches='tight')
     plt.show()
 

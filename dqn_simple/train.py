@@ -1,7 +1,3 @@
-"""
-Training script for Gomoku AI using self-play.
-"""
-
 import numpy as np
 import time
 import argparse
@@ -10,53 +6,40 @@ from dqn import DQNAgent, transform_state
 
 
 def self_play_training(episodes=100):
-    """Train the agent through self-play."""
-    # Initialize environment and agent
     env = GomokuEnvironment()
     agent = DQNAgent()
-
-    # Try to load existing model
     agent.load_model()
 
-    # Training statistics
     episode_lengths = []
     start_time = time.time()
-
-    # Training loop
     step = 0
+
     try:
         for episode in range(episodes):
-            # Reset environment
             board = env.reset()
             observation = env.get_state_representation()
 
-            # Initialize episode
             done = False
-            is_white_turn = True  # White goes first
+            is_white_turn = True
             episode_step = 0
 
             print(f"Episode {episode+1}/{episodes}")
 
-            # Episode loop
             while not done:
                 if is_white_turn:
-                    # White's turn
                     action = agent.choose_action(board, observation)
                     board, observation_, reward, done = env.step(action, 'White')
                     agent.store_transition(observation, action, reward, observation_)
                 else:
-                    # Black's turn (need to transform state)
                     transformed_state = transform_state(observation)
                     action = agent.choose_action(board, transformed_state)
                     board, observation_, reward, done = env.step(action, 'Black')
                     transformed_next = transform_state(observation_)
                     agent.store_transition(transformed_state, action, reward, transformed_next)
 
-                # Learn periodically
                 if step > 200 and step % 100 == 0:
                     agent.learn()
 
-                # Update state and turn
                 observation = observation_
                 is_white_turn = not is_white_turn
                 episode_step += 1
@@ -65,20 +48,16 @@ def self_play_training(episodes=100):
                 if done:
                     break
 
-            # Record statistics
             episode_lengths.append(episode_step)
 
-            # Log progress
             elapsed = time.time() - start_time
             print(f"Episode {episode+1} took {episode_step} steps")
             print(f"Total time: {elapsed:.1f}s, Steps/sec: {step/elapsed:.1f}")
 
-            # Save model periodically
             if (episode + 1) % 10 == 0:
                 agent.save_model()
                 print(f"Model saved at episode {episode+1}")
 
-        # Final save
         agent.save_model()
         print("Training completed!")
 
@@ -86,12 +65,10 @@ def self_play_training(episodes=100):
         print("\nTraining interrupted by user")
         agent.save_model()
 
-    # Plot results
     agent.plot_cost()
 
 
 def evaluate_agent(episodes=10):
-    """Evaluate the trained agent against random play."""
     env = GomokuEnvironment()
     agent = DQNAgent()
 
@@ -99,30 +76,24 @@ def evaluate_agent(episodes=10):
         print("No trained model found. Train first.")
         return
 
-    # Statistics
     wins = 0
     losses = 0
     draws = 0
 
     for episode in range(episodes):
-        # Reset
         board = env.reset()
         observation = env.get_state_representation()
 
-        # Episode variables
         done = False
-        is_white_turn = True  # Agent plays as White
+        is_white_turn = True
 
         print(f"Evaluation game {episode+1}/{episodes}")
 
-        # Game loop
         while not done:
             if is_white_turn:
-                # Agent's turn (White)
                 action = agent.choose_action(board, observation)
                 player = 'White'
             else:
-                # Random player (Black)
                 flat_board = board.flatten()
                 empty_cells = np.where(flat_board == 0)[0]
                 if len(empty_cells) == 0:
@@ -130,13 +101,9 @@ def evaluate_agent(episodes=10):
                 action = np.random.choice(empty_cells)
                 player = 'Black'
 
-            # Make move
             board, observation, reward, done = env.step(action, player)
-
-            # Switch turn
             is_white_turn = not is_white_turn
 
-            # Check game end
             if done:
                 if player == 'White':
                     wins += 1
@@ -146,12 +113,10 @@ def evaluate_agent(episodes=10):
                     print("Random player won!")
                 break
 
-        # Check for draw
         if not done:
             draws += 1
             print("Draw!")
 
-    # Report results
     win_rate = wins / episodes
     print(f"\nEvaluation results after {episodes} games:")
     print(f"Wins: {wins}, Losses: {losses}, Draws: {draws}")
